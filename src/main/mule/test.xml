@@ -25,6 +25,7 @@ output application/java
       </ee:transform>
 		<salesforce-composite:pre-create type="Account" doc:name="Pre create" config-ref="Salesforce_Composite_Config">
       </salesforce-composite:pre-create>
+		<logger level="INFO" doc:name="Logger" doc:id="e0f08ffb-50a1-471e-ae3b-3cb81d51b1bd" message="#[payload]"/>
 		<ee:transform doc:name="Transform Message" >
          <ee:message >
             <ee:set-payload ><![CDATA[output application/java
