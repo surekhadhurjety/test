@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:salesforce-composite="http://www.mulesoft.org/schema/mule/salesforce-composite" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+   xmlns:http="http://www.mulesoft.org/schema/mule/http"
+   xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/salesforce-composite http://www.mulesoft.org/schema/mule/salesforce-composite/current/mule-salesforce-composite.xsd">
+   <http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" >
+      <http:listener-connection host="0.0.0.0" port="8081" />
+   </http:listener-config>
+   <salesforce-composite:composite-config name="Salesforce_Composite_Config" doc:name="Salesforce Composite Config" >
+      <salesforce-composite:oauth-user-pass-connection consumerKey="3MVG97quAmFZJfVwBxnlu5ppn0CNSgeaSjqUnXSwNkST7MJ.iq41_8uo0dA9cVET8RYBbY9KhLtdVqZDJCB7h" consumerSecret="B5B55B478F9069666D0B9FA266AD3DC4168579AFED81037B113BEBA3B4E7027B" username="surekha.may2020@apisero.com" password="apisero@2" securityToken="sTLZOxv4MuN7f0ruinqiLiKU" />
+   </salesforce-composite:composite-config>
+   <flow name="composite-prequery-exampleFlow" >
+      <http:listener doc:name="Listener" config-ref="HTTP_Listener_config" path="/executeFlow"/>
+		<ee:transform doc:name="Transform Message">
+         <ee:message>
+            <ee:set-payload><![CDATA[%dw 2.0
+output application/java
+---
+{
+   Name: "NewAccount"
+}]]></ee:set-payload>
+         </ee:message>
+      </ee:transform>
+		<salesforce-composite:pre-create type="Account" doc:name="Pre create" config-ref="Salesforce_Composite_Config">
+      </salesforce-composite:pre-create>
+		<ee:transform doc:name="Transform Message" >
+         <ee:message >
+            <ee:set-payload ><![CDATA[output application/java
+---
+{
+   "Id": payload.Id,
+   "Fields" : ["Id", "Name"],
+   "Type": "Account"
+}]]></ee:set-payload>
+         </ee:message>
+      </ee:transform>
+		<salesforce-composite:pre-query doc:name="Pre query" config-ref="Salesforce_Composite_Config">
+         <salesforce-composite:query ><![CDATA[Select Name from Account WHERE Name LIKE '%:name%'
+                    ]]></salesforce-composite:query>
+         <salesforce-composite:parameters ><![CDATA[#[output applicaton/java
+---
+{
+   "name" : "NewAccount"
+}]]]></salesforce-composite:parameters>
+      </salesforce-composite:pre-query>
+      <ee:transform doc:name="Transform Message" >
+         <ee:message >
+            <ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+[
+   payload
+]]]></ee:set-payload>
+         </ee:message>
+      </ee:transform>
+      <salesforce-composite:execute-composite-batch doc:name="Execute composite batch" config-ref="Salesforce_Composite_Config"/>
+      <ee:transform doc:name="Transform Message" >
+         <ee:message >
+            <ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+         </ee:message>
+      </ee:transform>
+   
+</flow>
+</mule>
